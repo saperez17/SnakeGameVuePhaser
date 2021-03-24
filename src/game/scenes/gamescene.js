@@ -22,13 +22,15 @@ var sceneStatus = true;
 var score = 0;
 var gameOverTxt = '';
 var restartBtnTxt;
-var player = []
+// var player = []
 var scene;
 var btn_restart;
 var btn_start;
 var username = '';
 var usernameText;
-
+var overlapCollider;
+var overlapTriggered = false;
+var modifyBody = false;
 export default class GameScene extends Phaser.Scene{
     constructor(){
         super({
@@ -38,12 +40,14 @@ export default class GameScene extends Phaser.Scene{
         this.resources = 0;
         this.timer = 0;
         this.direction = 0
+        this.currentDirection = 0;
         // this.player = [];
         this.txt;
         this.allowedMovements =[37,38,39,40];
         this.appleGeneratorSeed = [];
         this.text;
         this.apples;
+        this.player;
         
     }
 
@@ -60,6 +64,9 @@ export default class GameScene extends Phaser.Scene{
     }
     create(){
         scene = this;
+        
+        // this.cameras.main.setBounds(0, 0, 4000, 4000);
+
         this.add.image(320,220, 'sky').setScale(0.5);
         this.input.on('drag', (point, gameObject, dragX, dragY)=>{
             gameObject.x = dragX;
@@ -104,10 +111,19 @@ export default class GameScene extends Phaser.Scene{
     
     
     this.input.keyboard.on('keydown', (event)=>{
-        this.direction = event.keyCode;
-      
+        this.direction = parseInt(event.keyCode);
         sceneStatus=true;
-        
+        if(this.currentDirection==0){
+            this.currentDirection = this.direction;
+        }else{
+            if ((this.currentDirection==37 || this.currentDirection==39) && (this.direction==38 || this.direction==40)){
+                this.currentDirection = this.direction;
+            }else if((this.currentDirection==38 || this.currentDirection==40) && (this.direction==37 || this.direction==39)){
+                this.currentDirection = this.direction;
+            }else{
+                console.log('Movement not allowed');
+            }
+        }
     })
     const style = { font: "bold 32px Arial", fill: "#fff" };
     this.score = this.add.text(480, 0, `Score: ${score} `, style);
@@ -128,51 +144,60 @@ export default class GameScene extends Phaser.Scene{
     btn_start = scene.physics.add.image(310,220, 'start_btn');
     btn_start.setScale(0.3)
     btn_start.setInteractive()
+    this.score.visible=true;
+        this.player = this.physics.add.group();
+        this.player.add(new Snake({
+            scene: this,
+            key:'head',
+            x:55,
+            y:15,
+            speed:41
+        }));
+        this.player.add(new Snake({
+            scene: this,
+            key:'body',
+            x:20,
+            y:15,
+            speed:41
+        }));
+        
+        // player.push();
+        // player.push(new Snake({
+        //     scene: this,
+        //     key:'body',
+        //     x:20,
+        //     y:15,
+        //     speed:41
+        // }));
+
+        
+    
+        this.apples = this.physics.add.group();
+        this.apples.add(new Apple({
+            scene: this,
+            key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
+            x:Phaser.Math.Between(50,610),
+            y:Phaser.Math.Between(30,430),
+            speed:0
+        }))
+
     btn_start.on('pointerdown', ()=>{
         // var username = this.usernameText.text;
         username = usernameText.text;
         btn_start.visible = false;
         usernameText.destroy()
-        this.score.visible=true;
-        player.push(new Snake({
-            scene: this,
-            key:'head',
-            x:100,
-            y:200,
-            speed:41
-        }));
-        player.push(new Snake({
-            scene: this,
-            key:'body',
-            x:60,
-            y:200,
-            speed:0
-        }));
-        this.apples = this.physics.add.group();
-        this.apples.add(new Apple({
-            scene: this,
-            key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
-            x:Phaser.Math.Between(30,650),
-            y:Phaser.Math.Between(30,430),
-            speed:0
-        }))
-        this.physics.add.overlap(player[0], this.apples, collectApple, null, this); 
-       
+        
+        this.physics.add.overlap(this.player, this.apples, overlapOn.bind(this))
     })
     restartBtnTxt = scene.add.text(290, 155, `restart`, {font: 'bold 14px Arial',fill: "#fff"});
     restartBtnTxt.visible = false;
-    // btn_restart.on('pointerover', ()=>{
-    //     btn_restart.setTexture('restart_btn_hover');
-    // })
-    // btn_restart.on('pointerout', ()=>{
-    //     btn_restart.setTexture('restart_btn');
-    // })
     btn_restart.on('pointerdown', ()=>{
         btn_restart.visible=false;
         gameOverTxt.visible=false;
         restartBtnTxt.visible=false;
         score=0;
         restartGame(scene);
+        
     })
    
     this.physics.world.on('worldbounds', function(body, blockedUp, blockedDown, blockedLeft, blockedRight){
@@ -180,69 +205,119 @@ export default class GameScene extends Phaser.Scene{
         restartBtnTxt.visible = true;
         gameOverTxt.visible = true;
         restartBtnTxt.visible=true;
+        saveUserScore();
         restartGame(scene);   
         if(sceneStatus){
-            console.log('collider')
+            // console.log('collider')
             // restartGame(scene);
             sceneStatus=false;
         } 
       this.direction=0;
-        console.log("hit");
+        // console.log("hit");
     })
 }
     update(time, delta){
         this.timer += delta;
-        if (this.timer >= 700 && sceneStatus==true){
+        if (this.timer >= 500 && sceneStatus==true){
+            console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
+            // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
             this.resources += 1;
             this.timer = 0;
+            if(modifyBody){
+                let newBody = new Snake({
+                    scene: this,
+                    key:'body',
+                    x:0,
+                    y:0,
+                    speed:0
+                });
+                newBody.visible=false;
+                this.player.add(newBody)
+                modifyBody = false;
+            }
             if(this.allowedMovements.includes(this.direction)){
-                for (var i=player.length-1; i>=0; i--){
+                for (var i=this.player.getTotalUsed()-1; i>=0; i--){
                     if (i!=0){
-                        player[i].moveTo(player[i-1].x, player[i-1].y, this.direction, sceneStatus);
                         
+                        var posX = this.player.getChildren()[i-1].x
+                        var posY  = this.player.getChildren()[i-1].y
+                        this.player.getChildren()[i].moveTo(posX, posY, this.currentDirection, sceneStatus);
                     }else{
-                        player[i].nextPos(this.direction, sceneStatus);
+                        this.player.getChildren()[i].nextPos(this.currentDirection, sceneStatus);
+                        // this.player.getChildren()[i].visible=true;
                     }
                 }
             }
+            // this.player.getChildren()[this.player.getTotalUsed()-1].visible=true;
         }
-        // else{
-           
-        // }
+        this.player.getChildren()[this.player.getTotalUsed()-1].visible=true;
         this.score.setText(
             `Score: ${score}`
           );
-        //   if(score<0){
-
-        //   }
     }
 }
-
-function restartGame(scene) {
-    player.forEach(element => {
-        element.destroy()
-    });
-    player = []
-    // //Create Snake
-    var head = new Snake({
-        scene:scene,
-        key:'head',
-        x:100,
-        y:200,
-        speed:41
-    })
+function overlapOn(){
+    console.log('collision');
     
-    var body = new Snake({
-        scene: scene,
-        key:'body',
-        x:60,
-        y:200,
-        speed:0
-    })
-    player.push(head);
-    player.push(body);
-    scene.physics.add.overlap(player[0], scene.apples, collectApple, null, scene); 
+    // if(overlapTriggered){
+        
+        // 
+        // this.physics.world.removeCollider(this.apples)
+        
+        // return
+    //   }
+    //   this.apples.clear(true,true);
+      console.log(this.apples.getChildren()[0].texture.key)
+      this.apples.getChildren()[0].x = 30;
+      if(this.apples.getChildren()[0].texture.key=='green_apple'){
+        score += 1;
+        // var new_body = new Snake({
+        //         scene: scene,
+        //         key:'head',
+        //         x:-51+player[player.length-1].x,
+        //         y:-70+player[player.length-1].y,
+        //         speed:41
+        //     })
+        // this.player.add(new Snake({
+        //     scene: this,
+        //     key:'body',
+        //     x:0,
+        //     y:0,
+        //     speed:41
+        // }))
+        modifyBody = true;
+    }else if(this.apples.getChildren()[0].texture.key=='red_apple'){
+        score -= 1;
+        if(this.player.length>1){
+            this.player[this.player.length-1].destroy()
+            this.player.pop();
+        }else{
+            this.text = this.add.text(240, 250, `Game Over `);
+        }
+    }
+    this.apples.clear(true,true);
+    // this.apples = this.physics.add.group();
+        this.apples.add(new Apple({
+            scene: this,
+            key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
+            x:Phaser.Math.Between(50,610),
+            y:Phaser.Math.Between(30,430),
+            speed:0
+        }))
+        // this.physics.add.overlap(player[0], this.apples, overlapOn.bind(this))
+    
+      overlapTriggered=true;
+    // scene.test_body = new Snake({
+    //     scene: scene,
+    //     key:'head',
+    //     x:20,
+    //     y:20,
+    //     speed:41
+    // })
+    // console.log('overlap with apple');
+}
 
+function saveUserScore(){
     const axios = require('axios').default;
     axios.post('http://localhost:3000/registerUserScore',{
         "name": username,
@@ -254,32 +329,59 @@ function restartGame(scene) {
     .catch(error => {
         console.log(error)
     })
-
- 
 }
 
-function collectApple(player_collision, apple){
+function restartGame(scene) {
+    this.player.forEach(element => {
+        element.destroy()
+    });
+    // player = []
+    // //Create Snake
+    var head = new Snake({
+        scene:scene,
+        key:'head',
+        x:100,
+        y:100,
+        speed:41
+    })
+    
+    var body = new Snake({
+        scene: scene,
+        key:'body',
+        x:60,
+        y:100,
+        speed:0
+    })
+    this.player.add(body);
+    this.player.add(head);
+    // scene.physics.add.overlap(this.player.getChildren()[0], this.apples, collectApple.bind(this), null, scene);  
+}
+
+function collectApple(){
     console.log('apple collision');
-    apple.destroy();
-    if(apple.texture.key=='green_apple'){
+    // console.log(player[player.length-1].x)
+    // console.log(player[player.length-1].y)
+    this.apples.clear(true,true);
+    if(this.apples.getChildren()[0]=='green_apple'){
         score += 1;
-        player.push(new Snake({
-            scene: this,
-            key:'body',
-            x:50,
-            y:50,
-            speed:0
-        }))
-    }else if(apple.texture.key=='red_apple'){
+        // var new_body = [...player][player.length-1];
+        // new_body.x -= 10
+        var new_body = new Snake({
+                scene: this,
+                key:'body',
+                x:0,
+                y:0,
+                speed:0
+            })
+        this.player.push(new_body)
+    }else if(this.apples.getChildren()[0]=='red_apple'){
         score -= 1;
-        if(player.length>1){
-            player[player.length-1].destroy()
-            player.pop();
+        if(this.player.length>1){
+            this.player[this.player.length-1].destroy()
+            this.player.pop();
         }else{
             this.text = this.add.text(240, 250, `Game Over `);
         }
-        
-
     }
     this.apples.add(new Apple({
         scene: this,

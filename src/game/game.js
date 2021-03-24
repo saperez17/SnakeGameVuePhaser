@@ -26,7 +26,7 @@ function launch(containerId){
             arcade: {
                 x:0,
                 y:0,
-                debug: false,
+                debug: true,
                 gravity: { y: 0 },
                 checkCollision:{
                     up:true,

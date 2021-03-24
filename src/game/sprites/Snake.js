@@ -8,7 +8,7 @@ export default class Snake extends Phaser.GameObjects.Sprite{
         this.body.collideWorldBounds = true;
         this.body.onWorldBounds = true;
         
-        obj.scene.add.existing(this, false);
+        obj.scene.add.existing(this, true);
         this.accelaration=20;
         this.speed = obj.speed;
         this.direction = 37;
