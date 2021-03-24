@@ -12,6 +12,7 @@ import restart_btn from '../../assets/sprites/buttons/restart_btn.png';
 import start_btn from '../../assets/sprites/buttons/start_btn.png';
 import restart_btn_hover from '../../assets/sprites/buttons/tile006.png';
 import RexUIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
+import spike from '../../assets/sprites/spikeA.png';
 
 
 var rect;
@@ -48,10 +49,13 @@ export default class GameScene extends Phaser.Scene{
         this.text;
         this.apples;
         this.player;
+        this.obstacles;
+        this.applesCount=0;
         
     }
 
     preload(){
+        this.load.image('spike', spike);
         this.load.image('sky', sky);
         this.load.image('head', head);
         this.load.image('body', body);
@@ -153,23 +157,13 @@ export default class GameScene extends Phaser.Scene{
             y:15,
             speed:41
         }));
-        this.player.add(new Snake({
-            scene: this,
-            key:'body',
-            x:20,
-            y:15,
-            speed:41
-        }));
-        
-        // player.push();
-        // player.push(new Snake({
+        // this.player.add(new Snake({
         //     scene: this,
         //     key:'body',
         //     x:20,
         //     y:15,
         //     speed:41
         // }));
-
         
     
         this.apples = this.physics.add.group();
@@ -213,13 +207,13 @@ export default class GameScene extends Phaser.Scene{
             sceneStatus=false;
         } 
       this.direction=0;
-        // console.log("hit");
     })
+    this.obstacles = this.physics.add.group();
 }
     update(time, delta){
         this.timer += delta;
         if (this.timer >= 500 && sceneStatus==true){
-            console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
+            // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
             // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
             this.resources += 1;
             this.timer = 0;
@@ -257,46 +251,38 @@ export default class GameScene extends Phaser.Scene{
     }
 }
 function overlapOn(){
+    this.applesCount+=1;
     console.log('collision');
-    
-    // if(overlapTriggered){
+    if (this.applesCount%2 == 0){
+        if(this.applesCount==2){
+            this.obstacles.add(new Apple({
+                scene: this,
+                key: 'spike',
+                x:Phaser.Math.Between(50,610),
+                y:Phaser.Math.Between(30,430),
+                speed:0
+            }))
+        }else{
+            this.obstacles.getChildren()[0].x = Phaser.Math.Between(50,580)
+            this.obstacles.getChildren()[0].y = Phaser.Math.Between(50,400)
+        }
         
-        // 
-        // this.physics.world.removeCollider(this.apples)
-        
-        // return
-    //   }
-    //   this.apples.clear(true,true);
+    }
       console.log(this.apples.getChildren()[0].texture.key)
       this.apples.getChildren()[0].x = 30;
       if(this.apples.getChildren()[0].texture.key=='green_apple'){
         score += 1;
-        // var new_body = new Snake({
-        //         scene: scene,
-        //         key:'head',
-        //         x:-51+player[player.length-1].x,
-        //         y:-70+player[player.length-1].y,
-        //         speed:41
-        //     })
-        // this.player.add(new Snake({
-        //     scene: this,
-        //     key:'body',
-        //     x:0,
-        //     y:0,
-        //     speed:41
-        // }))
         modifyBody = true;
     }else if(this.apples.getChildren()[0].texture.key=='red_apple'){
         score -= 1;
-        if(this.player.length>1){
-            this.player[this.player.length-1].destroy()
-            this.player.pop();
+        if(this.player.getTotalUsed()>=1){
+            this.player.getChildren()[this.player.getTotalUsed()-1].destroy()
+            // this.player.pop();
         }else{
             this.text = this.add.text(240, 250, `Game Over `);
         }
     }
     this.apples.clear(true,true);
-    // this.apples = this.physics.add.group();
         this.apples.add(new Apple({
             scene: this,
             key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
@@ -304,17 +290,7 @@ function overlapOn(){
             y:Phaser.Math.Between(30,430),
             speed:0
         }))
-        // this.physics.add.overlap(player[0], this.apples, overlapOn.bind(this))
-    
       overlapTriggered=true;
-    // scene.test_body = new Snake({
-    //     scene: scene,
-    //     key:'head',
-    //     x:20,
-    //     y:20,
-    //     speed:41
-    // })
-    // console.log('overlap with apple');
 }
 
 function saveUserScore(){
@@ -335,8 +311,6 @@ function restartGame(scene) {
     this.player.forEach(element => {
         element.destroy()
     });
-    // player = []
-    // //Create Snake
     var head = new Snake({
         scene:scene,
         key:'head',
@@ -354,18 +328,13 @@ function restartGame(scene) {
     })
     this.player.add(body);
     this.player.add(head);
-    // scene.physics.add.overlap(this.player.getChildren()[0], this.apples, collectApple.bind(this), null, scene);  
 }
 
 function collectApple(){
     console.log('apple collision');
-    // console.log(player[player.length-1].x)
-    // console.log(player[player.length-1].y)
     this.apples.clear(true,true);
     if(this.apples.getChildren()[0]=='green_apple'){
         score += 1;
-        // var new_body = [...player][player.length-1];
-        // new_body.x -= 10
         var new_body = new Snake({
                 scene: this,
                 key:'body',
