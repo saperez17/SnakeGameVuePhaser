@@ -35,10 +35,11 @@
       <v-container >
         <v-row no-gutters justify="center">
           <v-col md="9" >
-            <!-- <GameArea/> -->
-            <div :id="containerId" v-if="downloaded" />
+            <GameArea/>
+            
+            <!-- <div :id="containerId" v-if="downloaded" />
             <div class="placeholder" v-else/>
-              Downloading..
+              Downloading.. -->
 
             
           </v-col>
@@ -53,13 +54,15 @@
 </template>
 
 <script>
-// import GameArea from './components/GameArea';
+import GameArea from './components/GameArea';
 import TopScoresBoard from './components/TopScoresBoard';
+// import GameArea from './components/GameArea';
 export default {
   name: 'App',
 
   components: {
-    TopScoresBoard
+    TopScoresBoard,
+    GameArea
     // Login
     // GameArea,
   },
@@ -71,11 +74,11 @@ export default {
     scores: null,
   }),
   async mounted(){
-    const game = await import('./game/game');
-    this.downloaded = true;
-    this.$nextTick(() => {
-      this.gameInstance = game.launch(this.containerId);
-    });
+    // const game = await import('./game/game');
+    // this.downloaded = true;
+    // this.$nextTick(() => {
+    //   this.gameInstance = game.launch(this.containerId);
+    // });
     this.axios
     .get('http://localhost:3000/userScore')
     .then(response => {

@@ -51,7 +51,9 @@ export default class GameScene extends Phaser.Scene{
         this.player;
         this.obstacles;
         this.applesCount=0;
-        
+        this.scoreNum = score;  
+        this.usernameScene = username;   
+        this.event;
     }
 
     preload(){
@@ -154,6 +156,7 @@ export default class GameScene extends Phaser.Scene{
         this.obstacles = this.physics.add.group();
     btn_start.on('pointerdown', ()=>{
         username = usernameText.text;
+        this.usernameScene = username;
         btn_start.visible = false;
         usernameText.destroy()
         
@@ -174,7 +177,7 @@ export default class GameScene extends Phaser.Scene{
     })
    
     this.physics.world.on('worldbounds', function(body, blockedUp, blockedDown, blockedLeft, blockedRight){
-        console.log('collision')
+        // console.log('collision')
         btn_restart.visible = true;
         restartBtnTxt.visible = true;
         gameOverTxt.visible = true;
@@ -188,13 +191,14 @@ export default class GameScene extends Phaser.Scene{
         } 
       this.direction=0;
     })
-    
+    this.event =  new Event('registerScore');
+    this.dis
 }
     update(time, delta){
      
         this.timer += delta;
         if (this.timer >= 200 && sceneStatus==true){
-            console.log(sceneStatus)
+            // console.log(sceneStatus)
             // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
             // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
             this.resources += 1;
@@ -260,9 +264,11 @@ function overlapOn() {
     this.apples.getChildren()[0].x = 30;
     if (this.apples.getChildren()[0].texture.key == 'green_apple') {
         score += 1;
+        this.scoreNum = score;
         modifyBody = true;
     } else if (this.apples.getChildren()[0].texture.key == 'red_apple') {
         score -= 1;
+        this.scoreNum = score;
         if (this.player.getTotalUsed() >= 1) {
             this.player.getChildren()[this.player.getTotalUsed() - 1].destroy()
             // this.player.pop();
@@ -296,8 +302,9 @@ function saveUserScore(){
 }
 
 function gameOver(scene){
+    scene.usernameScene = username;
     scene.player.children.each(function(val, i){
-        console.log(i)
+        // console.log(i)
         if(i!=0){
             val.destroy()
         }
@@ -329,7 +336,7 @@ function restartGame(scene) {
 }
 
 function collectApple(){
-    console.log('apple collision');
+    // console.log('apple collision');
     this.apples.clear(true,true);
     if(this.apples.getChildren()[0]=='green_apple'){
         score += 1;

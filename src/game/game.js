@@ -41,25 +41,13 @@ function launch(containerId){
             width:640,
             height:480 
         },
-        preload(){
-            //Load text input plugin
-        // this.load.plugin('PhaserInput', 'node_modules/@azerion/phaser-input/build/phaser-input.js');
-        
+        preload(){        
         },
         create(){
-            
-            // var inputText = new InputText(this.scene.GameScene, 30, 30, 20, 20);
-            // this.add.plugin(PhaserInput.Plugin);
-            // var input = this.add.inputField(10, 90);
         }
 
     }
     );
-    // var game = new Phaser.Game()
-    
-
-    //     physics:
-    // })
 }
 
 
