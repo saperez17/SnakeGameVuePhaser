@@ -26,7 +26,7 @@ function launch(containerId){
             arcade: {
                 x:0,
                 y:0,
-                debug: true,
+                debug: false,
                 gravity: { y: 0 },
                 checkCollision:{
                     up:true,
@@ -39,7 +39,7 @@ function launch(containerId){
         scale: {
             mode: Phaser.Scale.CENTER_BOTH,
             width:640,
-            height:480 
+            height:460 
         },
         preload(){        
         },

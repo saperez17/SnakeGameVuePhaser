@@ -57,32 +57,55 @@ export default class Snake extends Phaser.GameObjects.Sprite{
     }
     nextPos(direction, status){
         if(status){
+            var runIntoWall = false;
             switch(direction){
                 case 37: //left
-                this.x -= this.speed;
-                this.angle = -180;
+                if(this.x - this.speed < 14){
+                    this.speed = 0;
+                    runIntoWall = true
+                }else{
+                    this.x -= this.speed;
+                    this.angle = -180;
+                }
                 break;
           
                 case 38: //up
-                this.y -= this.speed-8;
-                this.angle = -90;
+                if(this.y - this.speed < 15){
+                    this.speed = 0;
+                    runIntoWall = true;
+                }else{
+                    this.y -= this.speed;
+                    this.angle = -90;
+                }
                 break;
                 
                 case 39: //right
-                this.x += this.speed;
-                this.angle = 0;
+                if(this.x + this.speed > 629){
+                    console.log('out of bounds X')
+                    this.speed = 0;
+                    runIntoWall = true
+                }else{
+                    this.x += this.speed;
+                    this.angle = 0;
+                }
                 break;
           
                 case 40: //down
-                this.y += this.speed-8;
-                this.angle = 90;
+                if(this.y + this.speed > 477){
+                    this.speed = 0;
+                    this.angle = 0;
+                    runIntoWall = true;
+                }else{
+                    this.y += this.speed;
+                    this.angle = 90;
+                }
                 break;
-                default: return
+                default: break
               }
+              return runIntoWall;
         }else{
-            this.x=140;
+            return false
         }
-        
     }
     hitWorldBounds(){
         console.log("Hit World Bounds");

@@ -7,16 +7,16 @@ import VueAxios from 'vue-axios'
 // import Phaser from 'phaser'/
 
 // socket io
-import * as io from "socket.io-client";
-import VueSocketIO from "vue-socket.io";
+// import * as io from "socket.io-client";
+// import VueSocketIO from "vue-socket.io";
 
 
-Vue.use(
-  new VueSocketIO({
-    debug: true,
-    connection: io('http://localhost:8090'), // options object is Optional
-  })
-);
+// Vue.use(
+//   new VueSocketIO({
+//     debug: true,
+//     connection: io('http://localhost:5000/socket.io/'), // options object is Optional
+//   })
+// );
 Vue.use(VueAxios, axios)
 
 

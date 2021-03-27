@@ -2,9 +2,8 @@
   <v-app>
     <v-app-bar
       app
-      color="primary"
-      dark
-    >
+      color=""
+      light>
       <div class="d-flex align-center">
         <v-img
           alt="Vuetify Logo"
@@ -14,8 +13,6 @@
           transition="scale-transition"
           width="200"
         />
-
- 
       </div>
 
       <v-spacer></v-spacer>
@@ -31,24 +28,42 @@
     </v-app-bar>
 
     <v-main>
-      <!-- <HelloWorld/> -->
-      <v-container >
+      <v-container fluid class="game-container">
         <v-row no-gutters justify="center">
           <v-col md="9" >
             <GameArea/>
-            
-            <!-- <div :id="containerId" v-if="downloaded" />
-            <div class="placeholder" v-else/>
-              Downloading.. -->
-
-            
           </v-col>
-          <v-col md="3">
+          <v-col md="3" >
               <TopScoresBoard v-bind:scoreData="scores"/>
           </v-col>
         </v-row>
-
+      </v-container >
+      <v-container fluid class="footer-container">
+        <v-footer id="dev">
+        <v-card
+          flat
+          tile
+          class="text-center footer-card"
+        >
+      <v-card-text class=" pt-2 pb-2">
+        <!-- Phasellus feugiat arcu sapien, et iaculis ipsum elementum sit amet. Mauris cursus commodo interdum. Praesent ut risus eget metus luctus accumsan id ultrices nunc. Sed at orci sed massa consectetur dignissim a sit amet dui.  -->
+        <v-btn
+          v-for="icon in icons"
+          :key="icon"
+          class="mx-4 white--text"
+          icon
+        >
+        <v-icon size="24px">{{ icon }}</v-icon>
+        </v-btn>
+      </v-card-text>
+      <v-divider></v-divider>
+      <v-card-text class="pb-2 pt-2" style="color=white;">
+        {{new Date().getFullYear()}} - <strong>Santiago</strong>
+      </v-card-text>
+        </v-card>
+      </v-footer>
       </v-container>
+      
     </v-main>
   </v-app>
 </template>
@@ -56,7 +71,7 @@
 <script>
 import GameArea from './components/GameArea';
 import TopScoresBoard from './components/TopScoresBoard';
-// import GameArea from './components/GameArea';
+import EventDispatcher from './util/eventDispatcher';
 export default {
   name: 'App',
 
@@ -68,24 +83,37 @@ export default {
   },
 
   data: () => ({
+    emmiter: null,
     downloaded: false,
     gameInstance: null,
     containerId: 'game-container',
     scores: null,
+     icons: [
+      'mdi-facebook',
+      'mdi-twitter',
+      'mdi-linkedin',
+      'mdi-instagram',
+    ],
   }),
   async mounted(){
-    // const game = await import('./game/game');
-    // this.downloaded = true;
-    // this.$nextTick(() => {
-    //   this.gameInstance = game.launch(this.containerId);
-    // });
     this.axios
     .get('http://localhost:3000/userScore')
     .then(response => {
       this.scores=response.data;
+      this.sortData(this.scores);
       console.log(this.scores);
     })
 
+  },
+  created(){
+     this.emmiter = EventDispatcher.getInstance();
+      this.emmiter.on("SCORE_ADDED", (param)=>{
+          this.scores.push({
+            "Name": param.Name,
+            "score": param.score
+            })
+            this.sortData(this.scores);
+      })
   },
   destroyed(){
     this.gameInstance.destroy(false);
@@ -93,8 +121,39 @@ export default {
   methods:{
     startGame: function(){
       console.log('Starting game..');
-      
+    },
+    sortData: function(data){
+      data.sort((a,b)=>{
+              return b.score - a.score
+            })
     }
   }
 };
 </script>
+
+<style scoped>
+  #dev{
+    padding: 0rem;
+  }
+  .footer-card{
+    position: relative;
+    background-color: #222831;
+    color: white;
+    width: 100%;
+    /* height:90px; */
+    /* height: 12vh; */
+    /* top: 2rem; */
+  }
+  .game-container{
+    padding-top: 0.5rem;
+    padding-left: 0.5rem;
+    
+    /* margin-bottom: 4rem; */
+  }
+  .footer-container{
+    padding:0rem;
+    position: absolute;
+    bottom: 0px;
+    /* height: 30px; */
+  }
+</style>

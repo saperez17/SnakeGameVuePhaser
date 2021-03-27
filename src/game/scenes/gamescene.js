@@ -13,6 +13,7 @@ import start_btn from '../../assets/sprites/buttons/start_btn.png';
 import restart_btn_hover from '../../assets/sprites/buttons/tile006.png';
 import RexUIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 import spike from '../../assets/sprites/spikeA.png';
+import EventDispatcher from '../../util/eventDispatcher';
 
 
 var rect;
@@ -33,6 +34,7 @@ var overlapCollider;
 var overlapTriggered = false;
 var modifyBody = false;
 var gameOverStatus = false;
+const io = require("socket.io-client");
 export default class GameScene extends Phaser.Scene{
     constructor(){
         super({
@@ -54,6 +56,7 @@ export default class GameScene extends Phaser.Scene{
         this.scoreNum = score;  
         this.usernameScene = username;   
         this.event;
+        this.socket;
     }
 
     preload(){
@@ -69,15 +72,16 @@ export default class GameScene extends Phaser.Scene{
         this.load.image('start_btn', start_btn);
     }
     create(){
+        this.emmiter = EventDispatcher.getInstance();
         scene = this;
         
         // this.cameras.main.setBounds(0, 0, 4000, 4000);
 
         this.add.image(320,220, 'sky').setScale(0.5);
-        this.input.on('drag', (point, gameObject, dragX, dragY)=>{
-            gameObject.x = dragX;
-            gameObject.y = dragY;
-        })
+        // this.input.on('drag', (point, gameObject, dragX, dragY)=>{
+        //     gameObject.x = dragX;
+        //     gameObject.y = dragY;
+        // })
     this.cursorKeys = this.input.keyboard.createCursorKeys();
     this.keys = {
         left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
@@ -93,14 +97,17 @@ export default class GameScene extends Phaser.Scene{
         }
     }
     this.physics.world.setBounds(0,0,this.sys.game.canvas.width,this.sys.game.canvas.height);
-    this.physics.world.setBoundsCollision();
+    this.physics.world.setBoundsCollision(true, true, true, true);
     
     this.input.keyboard.on('keydown', (event)=>{
         this.direction = parseInt(event.keyCode);
         if (!gameOverStatus){
             sceneStatus = true
+            this.score.visible = true;
+            this.apples.getChildren()[0].visible = true;
         }
         if(this.allowedMovements.includes(this.direction)){
+            this.apples.getChildren()[0].visible = true;
             if(this.currentDirection==0){
                 this.currentDirection = this.direction;
             }else{
@@ -132,7 +139,7 @@ export default class GameScene extends Phaser.Scene{
     btn_start = scene.physics.add.image(310,220, 'start_btn');
     btn_start.setScale(0.3)
     btn_start.setInteractive()
-    this.score.visible=true;
+    // this.score.visible=true;
         this.player = this.physics.add.group();
         this.player.add(new Snake({
             scene: this,
@@ -141,13 +148,12 @@ export default class GameScene extends Phaser.Scene{
             y:15,
             speed:41
         }));
-        // this.player.setCollideWorldBounds = true;
-        // this.player.onWorldBounds = true;
+        
 
         this.apples = this.physics.add.group();
         this.apples.add(new Apple({
             scene: this,
-            key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
+            key:'green_apple',
             x:Phaser.Math.Between(50,610),
             y:Phaser.Math.Between(30,430),
             speed:0
@@ -176,6 +182,7 @@ export default class GameScene extends Phaser.Scene{
         
     })
    
+
     this.physics.world.on('worldbounds', function(body, blockedUp, blockedDown, blockedLeft, blockedRight){
         // console.log('collision')
         btn_restart.visible = true;
@@ -192,15 +199,14 @@ export default class GameScene extends Phaser.Scene{
       this.direction=0;
     })
     this.event =  new Event('registerScore');
-    this.dis
+    this.apples.getChildren()[0].visible = false;
 }
     update(time, delta){
-     
         this.timer += delta;
         if (this.timer >= 200 && sceneStatus==true){
             // console.log(sceneStatus)
-            // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
-            // console.log(this.player.getChildren()[this.player.getTotalUsed()-1].x)
+            // console.log('X: ' + this.player.getChildren()[0].x + '\nY:' + this.player.getChildren()[0].y)
+            
             this.resources += 1;
             this.timer = 0;
             if(modifyBody){
@@ -218,22 +224,40 @@ export default class GameScene extends Phaser.Scene{
             if(this.allowedMovements.includes(this.direction)){
                 for (var i=this.player.getTotalUsed()-1; i>=0; i--){
                     if (i!=0){
-                        
                         var posX = this.player.getChildren()[i-1].x
                         var posY  = this.player.getChildren()[i-1].y
+                        var speed = this.player.getChildren()[i-1].speed
+                        this.player.getChildren()[i].speed = speed;
                         this.player.getChildren()[i].moveTo(posX, posY, this.currentDirection, sceneStatus);
                     }else{
-                        this.player.getChildren()[i].nextPos(this.currentDirection, sceneStatus);
+                        var runIntoWall = this.player.getChildren()[i].nextPos(this.currentDirection, sceneStatus);
+                        if(runIntoWall){
+                            sceneStatus=false;
+                            gameOver(this);
+                        }
                         // this.player.getChildren()[i].visible=true;
                     }
                 }
+                if(this.player.countActive()>4){
+                    this.player.children.each((val, i)=>{
+                        if(i>=4){
+                            if(this.player.getChildren()[0].x==val.x && this.player.getChildren()[0].y==val.y){
+                                console.log("snake bit itself");
+                                sceneStatus=false;
+                                gameOver(this);
+                            }
+                        }
+                    })
+                }
             }
+            this.score.setText(
+                `Score: ${score}`
+              );
             // this.player.getChildren()[this.player.getTotalUsed()-1].visible=true;
         }
-        this.player.getChildren()[this.player.getTotalUsed()-1].visible=true;
-        this.score.setText(
-            `Score: ${score}`
-          );
+        if(this.player.countActive()>1){
+            this.player.getChildren()[this.player.getTotalUsed()-1].visible=true;
+        }
     }
 }
 function overlapOnObstacle(scene){
@@ -304,22 +328,26 @@ function saveUserScore(){
 function gameOver(scene){
     scene.usernameScene = username;
     scene.player.children.each(function(val, i){
-        // console.log(i)
         if(i!=0){
             val.destroy()
         }
         else{
             val.x = 55;
             val.y = 15;
+            val.speed = 41;
         }
     })
+
     sceneStatus = false;
     gameOverStatus = true;
     btn_restart.visible = true;
     restartBtnTxt.visible = true;
     gameOverTxt.visible = true;
     restartBtnTxt.visible=true;
-    saveUserScore();
+    scene.emmiter.emit("SCORE_ADDED", {"Name":username, "score": score});
+    scene.apples.getChildren()[0].visible = false;
+    // this.obstacles.getChildren()[0].visible = false;
+    // saveUserScore();
 }
 function restartGame(scene) {
     sceneStatus = true;
@@ -330,40 +358,21 @@ function restartGame(scene) {
     restartBtnTxt.visible=false;
     scene.apples.getChildren()[0].x = Phaser.Math.Between(50, 610);
     scene.apples.getChildren()[0].y = Phaser.Math.Between(30, 430);
-    scene.obstacles.getChildren()[0].x = Phaser.Math.Between(50, 610);
-    scene.obstacles.getChildren()[0].y = Phaser.Math.Between(30, 430);
+    
+    if(scene.obstacles.countActive()>0){
+        console.log(scene.obstacles.countActive())
+        scene.obstacles.getChildren()[0].x = Phaser.Math.Between(50, 610);
+        scene.obstacles.getChildren()[0].y = Phaser.Math.Between(30, 430);
+    }
+    scene.applesCount = 0;
     scene.currentDirection = 0;
+    emptyGroup(scene.obstacles)
 }
 
-function collectApple(){
-    // console.log('apple collision');
-    this.apples.clear(true,true);
-    if(this.apples.getChildren()[0]=='green_apple'){
-        score += 1;
-        var new_body = new Snake({
-                scene: this,
-                key:'body',
-                x:0,
-                y:0,
-                speed:0
-            })
-        this.player.push(new_body)
-    }else if(this.apples.getChildren()[0]=='red_apple'){
-        score -= 1;
-        if(this.player.length>1){
-            this.player[this.player.length-1].destroy()
-            this.player.pop();
-        }else{
-            this.text = this.add.text(240, 250, `Game Over `);
-        }
-    }
-    this.apples.add(new Apple({
-        scene: this,
-        key:Phaser.Math.RND.pick(this.appleGeneratorSeed),
-        x:Phaser.Math.Between(30,600),
-        y:Phaser.Math.Between(30,390),
-        speed:0 
-    }))
+function emptyGroup(group){
+    group.children.each(function(val, i){
+        val.destroy();
+    }) 
 }
 function generateApple(){
    
