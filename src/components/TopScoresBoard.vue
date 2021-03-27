@@ -1,7 +1,26 @@
 <template>
     <div>
         <!-- <TopScore :key="item.key" v-for="item in items"/> -->
-        <v-card class="ml-3 text-center">
+        <v-simple-table dark>
+            <template>
+                <thead>
+                    <tr>
+                        <th class="text-left">Player</th>
+                        <th class="text-left">Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                    v-for="(item, i) in scoreData"
+                    :key="i">
+                        <td>{{item.Name}}</td>
+                        <td>{{item.score}}</td>
+                    </tr>
+                </tbody>
+            </template>
+        </v-simple-table>
+
+        <!-- <v-card class="ml-3 text-center">
             <v-list class="">
             <div class="header  text-center" > <h3>SCOREBOARD</h3> </div>
             <v-list-item :key="i" v-for="(item, i) in scoreData">
@@ -15,7 +34,7 @@
                 </v-list-item-content>
             </v-list-item>
         </v-list>
-        </v-card>
+        </v-card> -->
         
         <!-- <div v-bind:key="score.Name" v-for="score in scoreData">
             <h3>{{score.Name}}</h3>

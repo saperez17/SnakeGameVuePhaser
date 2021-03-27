@@ -29,7 +29,7 @@
 
     <v-main>
       <v-container fluid class="game-container">
-        <v-row no-gutters justify="center">
+        <v-row  justify="center">
           <v-col md="9" >
             <GameArea/>
           </v-col>
@@ -38,6 +38,45 @@
           </v-col>
         </v-row>
       </v-container >
+
+      <v-container>
+        <v-row>
+          <v-col md="6">
+            <h3 class="">Instructions</h3>
+            <section
+            ><h4 class="">Welcome to UltimateSnake</h4>
+            <p>In this game you'll take the role of an apple rapaicious snake. Your goal is to eat as many
+              apples as possible, but watch out, some are poisonous and not very healthy. 
+            </p>
+              <ul>
+                <li>Green apples are healthy and will increase your length by 1 unit.</li>
+                <li>Red apples are noxious and will shrink you by 2 units.</li>
+                <li>Obstacles appear randomly, do not touch them.</li>
+                <li>At the end your score will be reflected on the right-hand side scoreboard</li>
+              </ul>
+            </section>
+          </v-col>
+          <v-col md=6>
+            <h3 class="">For WebDev</h3>
+            <section >
+              <h4 >This App's TechStack</h4>
+              <h5>Backend</h5>
+              <ul>
+                <li>Go</li>
+                <li>ChiAPI</li>
+                <li>CockroachDB</li>
+              </ul>
+              <v-divider></v-divider>
+              <h5>Frontend</h5>
+              <ul>
+                <li>Vue js + Vuetify</li>
+                <li>Phaser 3</li>
+              </ul>
+            </section>
+          </v-col>
+        </v-row>
+      </v-container>
+
       <v-container fluid class="footer-container">
         <v-footer id="dev">
         <v-card
@@ -152,7 +191,7 @@ export default {
   }
   .footer-container{
     padding:0rem;
-    position: absolute;
+    /* position: absolute; */
     bottom: 0px;
     /* height: 30px; */
   }
